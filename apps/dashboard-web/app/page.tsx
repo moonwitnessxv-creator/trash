@@ -7,10 +7,11 @@ async function loadDashboardData() {
   const client = createAdminApiClient({ baseUrl: adminApiUrl });
 
   try {
-    const [health, tenants] = await Promise.all([client.health(), client.listTenants()]);
+    const [health, ready, tenants] = await Promise.all([client.health(), client.ready(), client.listTenants()]);
 
     return {
       ok: health.ok,
+      ready: ready.ready,
       tenants,
       error: null as string | null,
       adminApiUrl
@@ -18,8 +19,9 @@ async function loadDashboardData() {
   } catch (error) {
     return {
       ok: false,
+      ready: false,
       tenants: [] as Tenant[],
-      error: error instanceof Error ? error.message : 'Failed to reach admin API',
+      error: error instanceof Error ? error.message : 'Failed to reach control plane',
       adminApiUrl
     };
   }
@@ -34,9 +36,10 @@ export default async function HomePage() {
         <p style={{ textTransform: 'uppercase', letterSpacing: 1.2, fontSize: 12, opacity: 0.7 }}>
           Trash Control Plane
         </p>
-        <h1 style={{ fontSize: 40, margin: '8px 0' }}>Multi-tenant Supabase platform</h1>
+        <h1 style={{ fontSize: 40, margin: '8px 0' }}>Independent multi-tenant platform</h1>
         <p style={{ fontSize: 18, lineHeight: 1.6, maxWidth: 760 }}>
-          This dashboard is the final layer: it provisions tenants, members, projects, and API keys on top of the self-hosted Supabase core.
+          This dashboard is the final layer: it provisions tenants, members, projects, and API keys on top of the
+          Postgres-backed control plane.
         </p>
       </header>
 
@@ -66,10 +69,13 @@ export default async function HomePage() {
         <article style={{ border: '1px solid #e5e7eb', borderRadius: 16, padding: 20, background: '#fff' }}>
           <h2 style={{ marginTop: 0 }}>Runtime status</h2>
           <p style={{ marginBottom: 8 }}>
-            Admin API: <strong>{data.adminApiUrl}</strong>
+            Control plane: <strong>{data.adminApiUrl}</strong>
+          </p>
+          <p style={{ marginBottom: 8 }}>
+            Health: <strong>{data.ok ? 'online' : 'offline'}</strong>
           </p>
           <p style={{ marginBottom: 0 }}>
-            Health: <strong>{data.ok ? 'online' : 'offline'}</strong>
+            Database: <strong>{data.ready ? 'ready' : 'not ready'}</strong>
           </p>
           {data.error ? <p style={{ color: '#b91c1c', marginBottom: 0 }}>{data.error}</p> : null}
         </article>
@@ -82,7 +88,7 @@ export default async function HomePage() {
             <ul style={{ margin: 0, paddingLeft: 18, lineHeight: 1.8 }}>
               {data.tenants.map((tenant) => (
                 <li key={tenant.id}>
-                  <strong>{tenant.name}</strong> <span style={{ opacity: 0.7 }}>({tenant.id})</span>
+                  <strong>{tenant.name}</strong> <span style={{ opacity: 0.7 }}>({tenant.slug})</span>
                 </li>
               ))}
             </ul>
@@ -101,8 +107,8 @@ export default async function HomePage() {
             overflowX: 'auto',
             lineHeight: 1.6
           }}
-        >{`dashboard-web  ->  admin-api  ->  self-hosted Supabase
-client apps    ->  SDK        ->  RLS-protected data`}</pre>
+        >{`dashboard-web  ->  control-plane  ->  postgresql
+client apps    ->  SDK            ->  HTTP API`}</pre>
       </section>
     </main>
   );
