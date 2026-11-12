@@ -1,7 +1,2 @@
-export type {
-  AdminApiClient,
-  CreateTenantInput,
-  Tenant,
-  TrashClientOptions
-} from './client';
-export { createAdminApiClient, createTenantPayload, createTrashClient } from './client';
+export type { ControlPlaneClient, ControlPlaneClientOptions, CreateTenantInput, Tenant } from './client';
+export { createControlPlaneClient, createTenantPayload, createTrashClient } from './client';
