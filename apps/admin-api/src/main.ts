@@ -2,6 +2,7 @@ import Fastify from 'fastify';
 import { getAdminApiEnv } from './lib/env';
 import { healthRoutes } from './routes/health';
 import { keyRoutes } from './routes/keys';
+import { memberRoutes } from './routes/members';
 import { projectRoutes } from './routes/projects';
 import { tenantRoutes } from './routes/tenants';
 
@@ -12,6 +13,7 @@ app.register(healthRoutes, { prefix: '/health' });
 app.register(tenantRoutes, { prefix: '/tenants' });
 app.register(projectRoutes, { prefix: '/projects' });
 app.register(keyRoutes, { prefix: '/keys' });
+app.register(memberRoutes, { prefix: '/tenants' });
 
 app.get('/', async () => ({
   name: 'trash-control-plane',
