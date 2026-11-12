@@ -23,11 +23,22 @@ Independent multi-tenant platform scaffold.
 
 ## Current flow
 - Dashboard reads data from the control plane API
+- Control plane API is protected with `ADMIN_API_KEY`
 - Control plane API writes directly to PostgreSQL
 - Client apps use the SDK wrapper
-- PostgreSQL stores tenants, projects, keys, and audit logs
+- PostgreSQL stores tenants, members, projects, keys, and audit logs
+
+## Provisioning endpoints
+- `POST /tenants`
+- `GET /tenants`
+- `GET /tenants/:tenantId/members`
+- `POST /tenants/:tenantId/members`
+- `GET /projects`
+- `POST /projects`
+- `GET /keys`
+- `POST /keys`
 
 ## Next steps
-- Add authentication and API key enforcement
-- Add project provisioning endpoints
-- Add billing and usage views in the dashboard
+- Add authentication for dashboard users
+- Add billing and usage views
+- Add automated backups and deployment manifests
