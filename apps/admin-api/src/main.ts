@@ -1,12 +1,12 @@
 import Fastify from 'fastify';
+import { getAdminApiEnv } from './lib/env';
 import { healthRoutes } from './routes/health';
 import { tenantRoutes } from './routes/tenants';
-import { getAdminApiEnv } from './lib/env';
 
 const env = getAdminApiEnv();
 const app = Fastify({ logger: true });
 
-app.register(healthRoutes);
+app.register(healthRoutes, { prefix: '/health' });
 app.register(tenantRoutes, { prefix: '/tenants' });
 
 app.get('/', async () => ({
