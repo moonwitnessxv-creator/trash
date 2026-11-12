@@ -1,27 +1,27 @@
-import { createClient, type SupabaseClient } from '@supabase/supabase-js';
-
-export type TrashClientOptions = {
-  supabaseUrl: string;
-  anonKey: string;
-};
-
 export type Tenant = {
   id: string;
   name: string;
-  created_at?: string;
-  status?: string;
+  slug: string;
+  status: string;
+  created_at: string;
 };
 
 export type CreateTenantInput = {
   name: string;
+  slug?: string;
   ownerUserId?: string;
 };
 
-export type AdminApiClient = {
+export type ControlPlaneClient = {
   baseUrl: string;
   health: () => Promise<{ ok: boolean }>;
+  ready: () => Promise<{ ready: boolean }>;
   listTenants: () => Promise<Tenant[]>;
   createTenant: (input: CreateTenantInput) => Promise<{ tenant: Tenant }>;
+};
+
+export type ControlPlaneClientOptions = {
+  baseUrl: string;
 };
 
 function normalizeBaseUrl(baseUrl: string) {
@@ -38,23 +38,16 @@ async function readJson<T>(response: Response): Promise<T> {
   return (body ? JSON.parse(body) : {}) as T;
 }
 
-export function createTrashClient(options: TrashClientOptions): SupabaseClient {
-  return createClient(options.supabaseUrl, options.anonKey, {
-    auth: {
-      persistSession: true,
-      autoRefreshToken: true,
-      detectSessionInUrl: false
-    }
-  });
-}
-
-export function createAdminApiClient(options: { baseUrl: string }): AdminApiClient {
+export function createControlPlaneClient(options: ControlPlaneClientOptions): ControlPlaneClient {
   const baseUrl = normalizeBaseUrl(options.baseUrl);
 
   return {
     baseUrl,
     async health() {
       return readJson<{ ok: boolean }>(await fetch(`${baseUrl}/health`));
+    },
+    async ready() {
+      return readJson<{ ready: boolean }>(await fetch(`${baseUrl}/health/ready`));
     },
     async listTenants() {
       const result = await readJson<{ tenants: Tenant[] }>(await fetch(`${baseUrl}/tenants`));
@@ -74,13 +67,21 @@ export function createAdminApiClient(options: { baseUrl: string }): AdminApiClie
   };
 }
 
-export function createTenantPayload(name: string, ownerUserId?: string) {
+export function createTrashClient(options: ControlPlaneClientOptions) {
+  return createControlPlaneClient(options);
+}
+
+export function createTenantPayload(name: string, ownerUserId?: string, slug?: string) {
   const payload: CreateTenantInput = {
     name: name.trim()
   };
 
   if (ownerUserId?.trim()) {
     payload.ownerUserId = ownerUserId.trim();
+  }
+
+  if (slug?.trim()) {
+    payload.slug = slug.trim();
   }
 
   return payload;
