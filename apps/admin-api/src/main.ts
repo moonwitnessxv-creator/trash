@@ -10,8 +10,9 @@ app.register(healthRoutes, { prefix: '/health' });
 app.register(tenantRoutes, { prefix: '/tenants' });
 
 app.get('/', async () => ({
-  name: 'trash-admin-api',
-  status: 'ok'
+  name: 'trash-control-plane',
+  status: 'ok',
+  storage: 'postgresql'
 }));
 
 async function main() {
