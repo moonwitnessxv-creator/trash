@@ -1,2 +1,0 @@
--- Seed data for local development.
--- Add test tenants/users here when needed.
