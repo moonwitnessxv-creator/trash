@@ -1,0 +1,14 @@
+{
+  "name": "trash",
+  "private": true,
+  "packageManager": "pnpm@9.0.0",
+  "scripts": {
+    "dev": "pnpm --parallel --filter @trash/admin-api --filter @trash/dashboard-web dev",
+    "build": "pnpm -r build",
+    "lint": "pnpm -r lint"
+  },
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ]
+}
