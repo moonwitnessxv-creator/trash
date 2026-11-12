@@ -2,6 +2,7 @@ export type AdminApiEnv = {
   port: number;
   postgresUrl: string;
   postgresSsl: boolean;
+  adminApiKey: string;
 };
 
 function required(name: string, fallback?: string) {
@@ -18,6 +19,7 @@ export function getAdminApiEnv(): AdminApiEnv {
   return {
     port: Number(process.env.PORT ?? 3001),
     postgresUrl: required('POSTGRES_URL', 'postgresql://trash:trash@postgres:5432/trash'),
-    postgresSsl: (process.env.POSTGRES_SSL ?? 'false') === 'true'
+    postgresSsl: (process.env.POSTGRES_SSL ?? 'false') === 'true',
+    adminApiKey: required('ADMIN_API_KEY', 'dev-admin-key')
   };
 }
