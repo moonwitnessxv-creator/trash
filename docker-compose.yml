@@ -1,4 +1,22 @@
 services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: trash-postgres
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-trash}
+      POSTGRES_USER: ${POSTGRES_USER:-trash}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-trash}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./db/migrations:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-trash} -d ${POSTGRES_DB:-trash}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
   admin-api:
     image: node:20-alpine
     container_name: trash-admin-api
@@ -7,14 +25,15 @@ services:
     environment:
       NODE_ENV: development
       PORT: 3001
-      SUPABASE_URL: ${SUPABASE_URL:-http://localhost:54321}
-      SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY:-replace-me}
-      SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY:-replace-me}
-      SUPABASE_JWT_SECRET: ${SUPABASE_JWT_SECRET:-replace-me}
+      POSTGRES_URL: ${POSTGRES_URL:-postgresql://trash:trash@postgres:5432/trash}
+      POSTGRES_SSL: ${POSTGRES_SSL:-false}
     volumes:
       - ./:/workspace
     ports:
       - "${ADMIN_API_PORT:-3001}:3001"
+    depends_on:
+      postgres:
+        condition: service_healthy
 
   dashboard-web:
     image: node:20-alpine
@@ -31,3 +50,6 @@ services:
       - "${DASHBOARD_PORT:-3000}:3000"
     depends_on:
       - admin-api
+
+volumes:
+  postgres_data:
