@@ -6,6 +6,13 @@ export type Tenant = {
   created_at: string;
 };
 
+export type Member = {
+  tenant_id: string;
+  user_id: string;
+  role: string;
+  created_at: string;
+};
+
 export type Project = {
   id: string;
   tenant_id: string;
@@ -30,6 +37,12 @@ export type CreateTenantInput = {
   ownerUserId?: string;
 };
 
+export type CreateMemberInput = {
+  tenantId: string;
+  userId: string;
+  role?: string;
+};
+
 export type CreateProjectInput = {
   tenantId: string;
   name: string;
@@ -47,6 +60,8 @@ export type ControlPlaneClient = {
   ready: () => Promise<{ ready: boolean }>;
   listTenants: () => Promise<Tenant[]>;
   createTenant: (input: CreateTenantInput) => Promise<{ tenant: Tenant }>;
+  listMembers: (tenantId: string) => Promise<Member[]>;
+  createMember: (input: CreateMemberInput) => Promise<{ member: Member }>;
   listProjects: (tenantId?: string) => Promise<Project[]>;
   createProject: (input: CreateProjectInput) => Promise<{ project: Project }>;
   listKeys: (tenantId?: string) => Promise<ApiKey[]>;
@@ -110,6 +125,24 @@ export function createControlPlaneClient(options: ControlPlaneClientOptions): Co
         })
       );
     },
+    async listMembers(tenantId) {
+      const result = await readJson<{ members: Member[] }>(
+        await fetch(`${baseUrl}/tenants/${encodeURIComponent(tenantId)}/members`, { headers })
+      );
+      return result.members ?? [];
+    },
+    async createMember(input) {
+      return readJson<{ member: Member }>(
+        await fetch(`${baseUrl}/tenants/${encodeURIComponent(input.tenantId)}/members`, {
+          method: 'POST',
+          headers: withAdminHeaders({ 'Content-Type': 'application/json' }, options.adminKey),
+          body: JSON.stringify({
+            userId: input.userId,
+            role: input.role
+          })
+        })
+      );
+    },
     async listProjects(tenantId) {
       const url = new URL(`${baseUrl}/projects`);
       if (tenantId?.trim()) {
@@ -164,6 +197,19 @@ export function createTenantPayload(name: string, ownerUserId?: string, slug?: s
 
   if (slug?.trim()) {
     payload.slug = slug.trim();
+  }
+
+  return payload;
+}
+
+export function createMemberPayload(tenantId: string, userId: string, role?: string) {
+  const payload: CreateMemberInput = {
+    tenantId: tenantId.trim(),
+    userId: userId.trim()
+  };
+
+  if (role?.trim()) {
+    payload.role = role.trim();
   }
 
   return payload;
