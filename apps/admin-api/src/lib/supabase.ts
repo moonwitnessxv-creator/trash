@@ -1,13 +1,20 @@
-import { createClient } from '@supabase/supabase-js';
+import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import { getAdminApiEnv } from './env';
 
-export function createAdminSupabaseClient() {
-  const env = getAdminApiEnv();
+let adminClient: SupabaseClient | null = null;
 
-  return createClient(env.supabaseUrl, env.supabaseServiceRoleKey, {
-    auth: {
-      persistSession: false,
-      autoRefreshToken: false
-    }
-  });
+export function getSupabaseAdmin() {
+  if (!adminClient) {
+    const env = getAdminApiEnv();
+
+    adminClient = createClient(env.supabaseUrl, env.supabaseServiceRoleKey, {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false,
+        detectSessionInUrl: false
+      }
+    });
+  }
+
+  return adminClient;
 }
