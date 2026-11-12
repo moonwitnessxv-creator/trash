@@ -1,4 +1,4 @@
-import { createAdminApiClient, type ApiKey, type Project, type Tenant } from '@trash/sdk';
+import { createAdminApiClient, type ApiKey, type Member, type Project, type Tenant } from '@trash/sdk';
 
 export const dynamic = 'force-dynamic';
 
@@ -16,12 +16,16 @@ async function loadDashboardData() {
       client.listKeys()
     ]);
 
+    const membersByTenant = await Promise.all(tenants.map((tenant) => client.listMembers(tenant.id)));
+    const members = membersByTenant.flat();
+
     return {
       ok: health.ok,
       ready: ready.ready,
       tenants,
       projects,
       keys,
+      members,
       error: null as string | null,
       adminApiUrl
     };
@@ -32,6 +36,7 @@ async function loadDashboardData() {
       tenants: [] as Tenant[],
       projects: [] as Project[],
       keys: [] as ApiKey[],
+      members: [] as Member[],
       error: error instanceof Error ? error.message : 'Failed to reach control plane',
       adminApiUrl
     };
@@ -49,7 +54,7 @@ export default async function HomePage() {
         </p>
         <h1 style={{ fontSize: 40, margin: '8px 0' }}>Independent multi-tenant platform</h1>
         <p style={{ fontSize: 18, lineHeight: 1.6, maxWidth: 760 }}>
-          This dashboard is the final layer: it provisions tenants, projects, and API keys on top of the
+          This dashboard is the final layer: it provisions tenants, projects, members, and API keys on top of the
           Postgres-backed control plane.
         </p>
       </header>
@@ -58,8 +63,8 @@ export default async function HomePage() {
         {[
           ['Tenants', 'Create and suspend customer workspaces.'],
           ['Projects', 'Provision isolated databases per project.'],
-          ['Keys', 'Issue and rotate access keys.'],
-          ['Audit', 'Track provisioning and usage events.']
+          ['Members', 'Invite owners, admins, and collaborators.'],
+          ['Keys', 'Issue and rotate access keys.']
         ].map(([title, description]) => (
           <article
             key={title}
@@ -95,6 +100,7 @@ export default async function HomePage() {
           <h2 style={{ marginTop: 0 }}>Totals</h2>
           <p style={{ marginBottom: 8 }}>Tenants: <strong>{data.tenants.length}</strong></p>
           <p style={{ marginBottom: 8 }}>Projects: <strong>{data.projects.length}</strong></p>
+          <p style={{ marginBottom: 8 }}>Members: <strong>{data.members.length}</strong></p>
           <p style={{ marginBottom: 0 }}>API keys: <strong>{data.keys.length}</strong></p>
         </article>
       </section>
@@ -131,19 +137,36 @@ export default async function HomePage() {
         </article>
       </section>
 
-      <section style={{ marginTop: 32 }}>
-        <h2>API keys</h2>
-        {data.keys.length === 0 ? (
-          <p>No API keys yet.</p>
-        ) : (
-          <ul style={{ margin: 0, paddingLeft: 18, lineHeight: 1.8 }}>
-            {data.keys.slice(0, 10).map((key) => (
-              <li key={key.id}>
-                <strong>{key.label}</strong> <span style={{ opacity: 0.7 }}>({key.key_prefix})</span>
-              </li>
-            ))}
-          </ul>
-        )}
+      <section style={{ display: 'grid', gap: 16, gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', marginTop: 32 }}>
+        <article style={{ border: '1px solid #e5e7eb', borderRadius: 16, padding: 20, background: '#fff' }}>
+          <h2 style={{ marginTop: 0 }}>Members</h2>
+          {data.members.length === 0 ? (
+            <p style={{ marginBottom: 0 }}>No members yet.</p>
+          ) : (
+            <ul style={{ margin: 0, paddingLeft: 18, lineHeight: 1.8 }}>
+              {data.members.slice(0, 10).map((member) => (
+                <li key={`${member.tenant_id}:${member.user_id}`}>
+                  <strong>{member.user_id}</strong> <span style={{ opacity: 0.7 }}>({member.role})</span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </article>
+
+        <article style={{ border: '1px solid #e5e7eb', borderRadius: 16, padding: 20, background: '#fff' }}>
+          <h2 style={{ marginTop: 0 }}>API keys</h2>
+          {data.keys.length === 0 ? (
+            <p style={{ marginBottom: 0 }}>No API keys yet.</p>
+          ) : (
+            <ul style={{ margin: 0, paddingLeft: 18, lineHeight: 1.8 }}>
+              {data.keys.slice(0, 10).map((key) => (
+                <li key={key.id}>
+                  <strong>{key.label}</strong> <span style={{ opacity: 0.7 }}>({key.key_prefix})</span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </article>
       </section>
 
       <section style={{ marginTop: 32 }}>
