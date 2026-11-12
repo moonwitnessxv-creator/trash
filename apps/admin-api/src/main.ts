@@ -1,23 +1,26 @@
 import Fastify from 'fastify';
+import { healthRoutes } from './routes/health';
+import { tenantRoutes } from './routes/tenants';
+import { getAdminApiEnv } from './lib/env';
 
+const env = getAdminApiEnv();
 const app = Fastify({ logger: true });
 
-app.get('/health', async () => ({ ok: true }));
+app.register(healthRoutes);
+app.register(tenantRoutes, { prefix: '/tenants' });
 
-app.post('/tenants', async (request, reply) => {
-  const body = request.body as { name?: string };
+app.get('/', async () => ({
+  name: 'trash-admin-api',
+  status: 'ok'
+}));
 
-  if (!body?.name) {
-    return reply.code(400).send({ error: 'name is required' });
+async function main() {
+  try {
+    await app.listen({ port: env.port, host: '0.0.0.0' });
+  } catch (error) {
+    app.log.error(error);
+    process.exit(1);
   }
+}
 
-  return reply.code(201).send({
-    id: crypto.randomUUID(),
-    name: body.name,
-    status: 'created'
-  });
-});
-
-const port = Number(process.env.PORT ?? 3001);
-
-app.listen({ port, host: '0.0.0.0' });
+void main();
