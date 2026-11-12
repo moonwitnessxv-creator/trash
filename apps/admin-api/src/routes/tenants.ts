@@ -1,5 +1,6 @@
 import type { FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
+import { requireAdminKey } from '../lib/auth';
 import { getDbPool } from '../lib/db';
 
 type TenantRow = {
@@ -26,6 +27,8 @@ function slugify(input: string) {
 }
 
 export const tenantRoutes: FastifyPluginAsync = async (app) => {
+  app.addHook('preHandler', requireAdminKey);
+
   app.get('/', async () => {
     const { rows } = await getDbPool().query<TenantRow>(
       'select id, name, slug, status, created_at from tenants order by created_at desc limit 100'
