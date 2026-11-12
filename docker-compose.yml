@@ -1,21 +1,4 @@
 services:
-  postgres:
-    image: postgres:16-alpine
-    container_name: trash-postgres
-    environment:
-      POSTGRES_DB: ${POSTGRES_DB:-postgres}
-      POSTGRES_USER: ${POSTGRES_USER:-postgres}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
-    ports:
-      - "${POSTGRES_PORT:-54322}:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-postgres}"]
-      interval: 10s
-      timeout: 5s
-      retries: 10
-
   admin-api:
     image: node:20-alpine
     container_name: trash-admin-api
@@ -32,9 +15,19 @@ services:
       - ./:/workspace
     ports:
       - "${ADMIN_API_PORT:-3001}:3001"
-    depends_on:
-      postgres:
-        condition: service_healthy
 
-volumes:
-  postgres_data:
+  dashboard-web:
+    image: node:20-alpine
+    container_name: trash-dashboard-web
+    working_dir: /workspace
+    command: sh -c "corepack enable && pnpm install && pnpm --filter @trash/dashboard-web dev -- --hostname 0.0.0.0 --port 3000"
+    environment:
+      NODE_ENV: development
+      ADMIN_API_URL: ${ADMIN_API_URL:-http://admin-api:3001}
+      NEXT_PUBLIC_ADMIN_API_URL: ${NEXT_PUBLIC_ADMIN_API_URL:-http://localhost:3001}
+    volumes:
+      - ./:/workspace
+    ports:
+      - "${DASHBOARD_PORT:-3000}:3000"
+    depends_on:
+      - admin-api
