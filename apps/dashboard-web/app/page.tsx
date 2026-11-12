@@ -1,4 +1,4 @@
-import { createAdminApiClient } from '@trash/sdk';
+import { createAdminApiClient, type Tenant } from '@trash/sdk';
 
 export const dynamic = 'force-dynamic';
 
@@ -18,7 +18,7 @@ async function loadDashboardData() {
   } catch (error) {
     return {
       ok: false,
-      tenants: [] as Awaited<ReturnType<typeof createAdminApiClient>> extends { listTenants: () => Promise<infer T> } ? T : never,
+      tenants: [] as Tenant[],
       error: error instanceof Error ? error.message : 'Failed to reach admin API',
       adminApiUrl
     };
