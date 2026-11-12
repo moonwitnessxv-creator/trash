@@ -1,9 +1,7 @@
 export type AdminApiEnv = {
   port: number;
-  supabaseUrl: string;
-  supabaseAnonKey: string;
-  supabaseServiceRoleKey: string;
-  supabaseJwtSecret: string;
+  postgresUrl: string;
+  postgresSsl: boolean;
 };
 
 function required(name: string, fallback?: string) {
@@ -19,9 +17,7 @@ function required(name: string, fallback?: string) {
 export function getAdminApiEnv(): AdminApiEnv {
   return {
     port: Number(process.env.PORT ?? 3001),
-    supabaseUrl: required('SUPABASE_URL', 'http://localhost:54321'),
-    supabaseAnonKey: required('SUPABASE_ANON_KEY', 'replace-me'),
-    supabaseServiceRoleKey: required('SUPABASE_SERVICE_ROLE_KEY', 'replace-me'),
-    supabaseJwtSecret: required('SUPABASE_JWT_SECRET', 'replace-me')
+    postgresUrl: required('POSTGRES_URL', 'postgresql://trash:trash@postgres:5432/trash'),
+    postgresSsl: (process.env.POSTGRES_SSL ?? 'false') === 'true'
   };
 }
