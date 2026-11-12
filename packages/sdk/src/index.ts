@@ -1,10 +1,2 @@
-export type Tenant = {
-  id: string;
-  name: string;
-};
-
-export function createTenantPayload(name: string) {
-  return {
-    name: name.trim()
-  };
-}
+export type { Tenant, TrashClientOptions } from './client';
+export { createTenantPayload, createTrashClient } from './client';
