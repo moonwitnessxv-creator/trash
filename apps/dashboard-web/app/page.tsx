@@ -1,18 +1,27 @@
-import { createAdminApiClient, type Tenant } from '@trash/sdk';
+import { createAdminApiClient, type ApiKey, type Project, type Tenant } from '@trash/sdk';
 
 export const dynamic = 'force-dynamic';
 
 async function loadDashboardData() {
   const adminApiUrl = process.env.ADMIN_API_URL ?? 'http://localhost:3001';
-  const client = createAdminApiClient({ baseUrl: adminApiUrl });
+  const adminKey = process.env.ADMIN_API_KEY ?? 'dev-admin-key';
+  const client = createAdminApiClient({ baseUrl: adminApiUrl, adminKey });
 
   try {
-    const [health, ready, tenants] = await Promise.all([client.health(), client.ready(), client.listTenants()]);
+    const [health, ready, tenants, projects, keys] = await Promise.all([
+      client.health(),
+      client.ready(),
+      client.listTenants(),
+      client.listProjects(),
+      client.listKeys()
+    ]);
 
     return {
       ok: health.ok,
       ready: ready.ready,
       tenants,
+      projects,
+      keys,
       error: null as string | null,
       adminApiUrl
     };
@@ -21,6 +30,8 @@ async function loadDashboardData() {
       ok: false,
       ready: false,
       tenants: [] as Tenant[],
+      projects: [] as Project[],
+      keys: [] as ApiKey[],
       error: error instanceof Error ? error.message : 'Failed to reach control plane',
       adminApiUrl
     };
@@ -31,14 +42,14 @@ export default async function HomePage() {
   const data = await loadDashboardData();
 
   return (
-    <main style={{ padding: 32, fontFamily: 'system-ui, sans-serif', maxWidth: 1080, margin: '0 auto' }}>
+    <main style={{ padding: 32, fontFamily: 'system-ui, sans-serif', maxWidth: 1200, margin: '0 auto' }}>
       <header style={{ marginBottom: 32 }}>
         <p style={{ textTransform: 'uppercase', letterSpacing: 1.2, fontSize: 12, opacity: 0.7 }}>
           Trash Control Plane
         </p>
         <h1 style={{ fontSize: 40, margin: '8px 0' }}>Independent multi-tenant platform</h1>
         <p style={{ fontSize: 18, lineHeight: 1.6, maxWidth: 760 }}>
-          This dashboard is the final layer: it provisions tenants, members, projects, and API keys on top of the
+          This dashboard is the final layer: it provisions tenants, projects, and API keys on top of the
           Postgres-backed control plane.
         </p>
       </header>
@@ -46,8 +57,8 @@ export default async function HomePage() {
       <section style={{ display: 'grid', gap: 16, gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))' }}>
         {[
           ['Tenants', 'Create and suspend customer workspaces.'],
-          ['Members', 'Invite owners, admins, and collaborators.'],
-          ['Keys', 'Issue publishable and admin keys.'],
+          ['Projects', 'Provision isolated databases per project.'],
+          ['Keys', 'Issue and rotate access keys.'],
           ['Audit', 'Track provisioning and usage events.']
         ].map(([title, description]) => (
           <article
@@ -81,6 +92,15 @@ export default async function HomePage() {
         </article>
 
         <article style={{ border: '1px solid #e5e7eb', borderRadius: 16, padding: 20, background: '#fff' }}>
+          <h2 style={{ marginTop: 0 }}>Totals</h2>
+          <p style={{ marginBottom: 8 }}>Tenants: <strong>{data.tenants.length}</strong></p>
+          <p style={{ marginBottom: 8 }}>Projects: <strong>{data.projects.length}</strong></p>
+          <p style={{ marginBottom: 0 }}>API keys: <strong>{data.keys.length}</strong></p>
+        </article>
+      </section>
+
+      <section style={{ display: 'grid', gap: 16, gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', marginTop: 32 }}>
+        <article style={{ border: '1px solid #e5e7eb', borderRadius: 16, padding: 20, background: '#fff' }}>
           <h2 style={{ marginTop: 0 }}>Tenants</h2>
           {data.tenants.length === 0 ? (
             <p style={{ marginBottom: 0, lineHeight: 1.6 }}>No tenants yet. Create the first one from your admin flow.</p>
@@ -94,6 +114,36 @@ export default async function HomePage() {
             </ul>
           )}
         </article>
+
+        <article style={{ border: '1px solid #e5e7eb', borderRadius: 16, padding: 20, background: '#fff' }}>
+          <h2 style={{ marginTop: 0 }}>Projects</h2>
+          {data.projects.length === 0 ? (
+            <p style={{ marginBottom: 0, lineHeight: 1.6 }}>No projects yet. Provision a tenant first.</p>
+          ) : (
+            <ul style={{ margin: 0, paddingLeft: 18, lineHeight: 1.8 }}>
+              {data.projects.slice(0, 10).map((project) => (
+                <li key={project.id}>
+                  <strong>{project.name}</strong> <span style={{ opacity: 0.7 }}>({project.database_name})</span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </article>
+      </section>
+
+      <section style={{ marginTop: 32 }}>
+        <h2>API keys</h2>
+        {data.keys.length === 0 ? (
+          <p>No API keys yet.</p>
+        ) : (
+          <ul style={{ margin: 0, paddingLeft: 18, lineHeight: 1.8 }}>
+            {data.keys.slice(0, 10).map((key) => (
+              <li key={key.id}>
+                <strong>{key.label}</strong> <span style={{ opacity: 0.7 }}>({key.key_prefix})</span>
+              </li>
+            ))}
+          </ul>
+        )}
       </section>
 
       <section style={{ marginTop: 32 }}>
